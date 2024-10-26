@@ -1,0 +1,204 @@
+import numpy as np
+import pandas as pd
+...................................................
+# Read the CSV file "News-Topic-Modeling.csv" into a DataFrame
+df = pd.read_csv("/content/drive/MyDrive/News-Topic-Modeling.csv")
+
+# Display the first 5 rows of the DataFrame
+df.head()
+.....................................................
+# Print the 'title' of the second row in the DataFrame
+print(df.iloc[1]["title"])
+
+# Print the 'description' of the second row in the DataFrame
+print(df.iloc[1]["description"])
+..........................................................
+# Concatenate the 'title' and 'description' columns with a space separator
+# The result is stored in a new column 'text'
+df['text'] = df["title"].str.cat(df["description"], sep=" ")
+
+# Define a list of columns to be dropped from the DataFrame
+columns_to_drop = ["title", "description", "guid", "link", "pubDate"]
+
+# Drop the unnecessary columns from the DataFrame
+# 'inplace=True' ensures that the DataFrame is modified directly
+df.drop(columns=columns_to_drop, inplace=True)
+
+# Display the DataFrame
+df
+................................................................
+# Check for any null values in the DataFrame
+null_values = df.isnull().sum()
+
+# Print the result
+print(null_values)
+............................................................
+blanks = []
+
+for i,text in df.itertuples():  # iterate over the DataFrame
+    if text.isspace():         # test 'email' for whitespace
+        blanks.append(i)     # add matching index numbers to the list
+
+print(len(blanks),"   |    ", 'blanks: ', blanks  )
+....................................................
+# Import the 'stopwords' corpus from the nltk library
+# Stop words are words like 'is', 'the', 'a', etc. that do not contain important meaning
+# and are usually removed from texts
+import nltk
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# Import the 'WordNetLemmatizer' from the nltk library
+# Lemmatization is the process of reducing inflected (or sometimes derived) words to their word stem, base or root form
+from nltk.stem import WordNetLemmatizer
+
+# Get the list of English stop words
+sw = stopwords.words('english')
+
+# Instantiate the WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+....................................................
+def preprocess_text(messy_string):
+    # Assert that the input is a string
+    assert(type(messy_string) == str)
+
+    # Split the string into words, lemmatize each word, remove stop words,
+    # and then join the words back into a string
+    # 'lemmatizer.lemmatize(word)' reduces the word to its base or root form
+    # 'word not in sw' removes stop words
+    cleaned = ' '.join([lemmatizer.lemmatize(word) for word in messy_string.split() if word not in sw])
+
+    # Return the cleaned text
+    return cleaned
+........................................................
+# Apply the 'preprocess_text' function to each element in the 'text' column of the DataFrame
+# The result is stored in a new column 'cleaned'
+df['cleaned'] = df['text'].apply(preprocess_text)
+
+# Display the DataFrame
+df
+...................................................
+# Import the 'CountVectorizer' and 'TfidfVectorizer' from the sklearn library
+from sklearn.feature_extraction.text import CountVectorizer , TfidfVectorizer
+
+# Instantiate a CountVectorizer for LDA (Latent Dirichlet Allocation)
+# 'max_df' is set to 0.95, meaning it ignores terms that appear in more than 95% of the documents
+# 'min_df' is set to 2, meaning it ignores terms that appear in less than 2 documents
+# 'stop_words' is set to 'english', meaning it will remove English stop words before vectorizing
+count_vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
+
+# Fit the CountVectorizer to the 'cleaned' column of the DataFrame and transform the data
+X_lda = count_vectorizer.fit_transform(df['cleaned'])
+
+# Instantiate a TfidfVectorizer for NMF (Non-negative Matrix Factorization)
+# The parameters are the same as for the CountVectorizer
+tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, stop_words='english')
+
+# Fit the TfidfVectorizer to the 'cleaned' column of the DataFrame and transform the data
+X_nmf = tfidf_vectorizer.fit_transform(df['cleaned'])
+..............................................................................
+# Import the 'CountVectorizer' and 'TfidfVectorizer' from the sklearn library
+from sklearn.feature_extraction.text import CountVectorizer , TfidfVectorizer
+
+# Instantiate a CountVectorizer for LDA (Latent Dirichlet Allocation)
+# 'max_df' is set to 0.95, meaning it ignores terms that appear in more than 95% of the documents
+# 'min_df' is set to 2, meaning it ignores terms that appear in less than 2 documents
+# 'stop_words' is set to 'english', meaning it will remove English stop words before vectorizing
+count_vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
+
+# Fit the CountVectorizer to the 'cleaned' column of the DataFrame and transform the data
+X_lda = count_vectorizer.fit_transform(df['cleaned'])
+
+# Instantiate a TfidfVectorizer for NMF (Non-negative Matrix Factorization)
+# The parameters are the same as for the CountVectorizer
+tfidf_vectorizer = TfidfVectorizer(max_df=0.95, min_df=2, stop_words='english')
+
+# Fit the TfidfVectorizer to the 'cleaned' column of the DataFrame and transform the data
+X_nmf = tfidf_vectorizer.fit_transform(df['cleaned'])
+...................................................................................
+# Import the 'NMF' and 'LatentDirichletAllocation' from the sklearn library
+from sklearn.decomposition import NMF, LatentDirichletAllocation
+
+# Instantiate a LatentDirichletAllocation model with 10 components
+# 'random_state' is set to 42 for reproducibility
+lda_model = LatentDirichletAllocation(n_components=10, random_state=42)
+
+# Fit the LDA model to the data stored in 'X_lda'
+lda_model.fit(X_lda)
+
+# Instantiate a NMF model with 10 components
+# 'random_state' is set to 42 for reproducibility
+nmf_model = NMF(n_components=10, random_state=42)
+
+# Fit the NMF model to the data stored in 'X_nmf'
+nmf_model.fit(X_nmf)
+.............................................................................
+# Import the 'NMF' and 'LatentDirichletAllocation' from the sklearn library
+from sklearn.decomposition import NMF, LatentDirichletAllocation
+
+# Instantiate a LatentDirichletAllocation model with 10 components
+# 'random_state' is set to 42 for reproducibility
+lda_model = LatentDirichletAllocation(n_components=10, random_state=42)
+
+# Fit the LDA model to the data stored in 'X_lda'
+lda_model.fit(X_lda)
+
+# Instantiate a NMF model with 10 components
+# 'random_state' is set to 42 for reproducibility
+nmf_model = NMF(n_components=10, random_state=42)
+
+# Fit the NMF model to the data stored in 'X_nmf'
+nmf_model.fit(X_nmf)
+...............................................................
+lda_model.components_.shape
+..............................................................
+count_vectorizer.get_feature_names_out()[7812]
+
+..............................................
+# Loop over each topic in the LDA model's components
+for index, topic in enumerate(lda_model.components_):
+    # Print the topic number
+    print(f'THE TOP 15 WORDS FOR TOPIC #{index}')
+
+    # Get the indices of the top 15 words for the current topic
+    # 'argsort()' returns the indices that would sort the topic's words
+    # '[-15:]' gets the last 15 indices, corresponding to the top 15 words
+    # 'get_feature_names_out()[i]' gets the word corresponding to the index 'i'
+    print([count_vectorizer.get_feature_names_out()[i] for i in topic.argsort()[-15:]])
+
+    # Print a newline for readability
+    print('\n')
+.......................................................................
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+
+# Assuming you've already initialized nmf_model, tfidf_vectorizer, and tfidf_data
+
+# Loop over each topic in the NMF model's components
+for index, topic in enumerate(nmf_model.components_):
+    # Print the topic number
+    print(f'THE TOP 15 WORDS FOR TOPIC #{index}')
+
+    # Get the indices of the top 15 words for the current topic
+    top_words_indices = topic.argsort()[-15:]
+
+    # Get the top 15 words for the current topic
+    top_words = [tfidf_vectorizer.get_feature_names_out()[i] for i in top_words_indices]
+
+    # Print the top words for the current topic
+    print(top_words)
+
+    # Create a WordCloud object
+    wordcloud = WordCloud(width=400, height=200, background_color='white').generate(' '.join(top_words))
+
+    # Display the word cloud for the current topic
+    plt.figure(figsize=(8, 4))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.title(f'Word Cloud for Topic #{index}')
+    plt.axis('off')
+    plt.show()
+...............................................................
+# Compute perplexity
+perplexity = lda_model.perplexity(X_lda)
+print(f"Perplexity: {perplexity}")
